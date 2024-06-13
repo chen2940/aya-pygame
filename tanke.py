@@ -1,11 +1,9 @@
-from random import random
-
-import pygame, sys
+import pygame, sys, time, random
 
 _display = pygame.display
 _font = pygame.font
 COLOR_BLACK = pygame.Color(0, 0, 0)
-COLOR_WRITE = pygame.Color(255, 255, 255)
+COLOR_WRITE = pygame.Color(255, 0, 0)
 version = "0.01 Bate"
 
 
@@ -96,7 +94,7 @@ class Tank():
 
 
 class EnemyTank(Tank):
-    def init(self, left, top, speed):
+    def __init__(self, left, top, speed):
         self.images = {
             'U': pygame.image.load('img/enemy1U.gif'),
             'D': pygame.image.load('img/enemy1D.gif'),
@@ -125,12 +123,47 @@ class EnemyTank(Tank):
         elif num == 4:
             return 'R'
 
+    #创建敌方坦克
+    def creatEnemyTank(self):
+        top = 100
+        speed = random.randint(3, 6)
+        for i in range(MainGame.EnemTank_count):
+            # 每次都随机生成一个 left 值
+            left = random.randint(1, 7)
+            eTank = EnemyTank(left * 100, top, speed)
+            MainGame.EnemyTank_list.append(eTank)
+
+    # 随机移动
+    def randMove(self):
+        if self.step <= 0:
+            self.direction = self.randDirection()
+            self.step = 50
+        else:
+            self.move()
+            self.step -= 1
+
+    # 将敌方坦克加入到窗口中
+    def blitEnemyTank(self):
+        for eTank in MainGame.EnemyTank_list:
+            eTank.displayTank()
+            # 坦克移动的方法
+            eTank.randMove()
+
 
 class MainGame():
     # 游戏主窗口
     window = None
     SCREEN_HEIGHT = 768
     SCREEN_WIDTH = 1024
+
+    # 创建我方坦克
+    TANK_P1 = None
+    # 存储所有敌方坦克
+    EnemyTank_list = []
+    # 要创建的敌方坦克的数量
+    EnemTank_count = 5
+    # 存储我方子弹的列表
+    Bullet_list = []
 
     def __init__(self):
         pass
@@ -147,6 +180,7 @@ class MainGame():
         # 创建窗口加载窗口
         MainGame.window = _display.set_mode([MainGame.SCREEN_WIDTH, MainGame.SCREEN_HEIGHT])
         MainGame.TANK_P1 = Tank(400, 300)
+        # self.creatEnemyTank()
         # 设置一下游戏标
         _display.set_caption("坦克大战 " + version)
         # 让窗口持续刷新操作
@@ -155,8 +189,12 @@ class MainGame():
             MainGame.window.fill(COLOR_BLACK)
             MainGame.window.blit(self.getTextSurface("剩余敌人:%d" % 5), (5, 5))
             MainGame.TANK_P1.displayTank()
+            # 在循环中持续完成事件的获取
             MainGame.TANK_P1.getEvent()
-            MainGame.TANK_P1.move()
+            # 根据坦克的开关状态调用坦克的移动方法
+            # if MainGame.TANK_P1 and not MainGame.TANK_P1.stop:
+            #     MainGame.TANK_P1.move()
+            time.sleep(0.02)
             # 窗口的刷新
             _display.update()
 
