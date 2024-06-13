@@ -7,7 +7,7 @@ import pygame, sys
 pygame.init()
 
 size = chang, kuan = 600, 400
-screen = pygame.display.set_mode(size,flags=pygame.FULLSCREEN)
+screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 # pygame.display.set_icon("")
 pygame.display.set_caption("ball")
