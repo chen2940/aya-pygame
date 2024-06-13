@@ -33,8 +33,6 @@ class Tank():
         # 2.将坦克加入到窗口中
         MainGame.window.blit(self.image, self.rect)
 
-
-
     # 坦克的移动方法
     def move(self):
         if self.direction == 'L':
@@ -81,16 +79,6 @@ class EnemyTank(Tank):
         elif num == 4:
             return 'R'
 
-    #创建敌方坦克
-    def creatEnemyTank(self):
-        top = 100
-        speed = random.randint(3, 6)
-        for i in range(MainGame.EnemTank_count):
-            # 每次都随机生成一个 left 值
-            left = random.randint(1, 7)
-            eTank = EnemyTank(left * 100, top, speed)
-            MainGame.EnemyTank_list.append(eTank)
-
     # 随机移动
     def randMove(self):
         if self.step <= 0:
@@ -101,11 +89,6 @@ class EnemyTank(Tank):
             self.step -= 1
 
     # 将敌方坦克加入到窗口中
-    def blitEnemyTank(self):
-        for eTank in MainGame.EnemyTank_list:
-            eTank.displayTank()
-            # 坦克移动的方法
-            eTank.randMove()
 
 
 class MainGame():
@@ -138,10 +121,25 @@ class MainGame():
         # 创建窗口加载窗口
         MainGame.window = _display.set_mode([MainGame.SCREEN_WIDTH, MainGame.SCREEN_HEIGHT])
         MainGame.TANK_P1 = Tank(400, 300)
-        # self.creatEnemyTank()
+        self.creatEnemyTank()
         # 设置一下游戏标
         _display.set_caption("坦克大战 " + version)
         # 让窗口持续刷新操作
+
+    def creatEnemyTank(self):
+        top = 100
+        speed = random.randint(3, 6)
+        for i in range(MainGame.EnemTank_count):
+            # 每次都随机生成一个 left 值
+            left = random.randint(1, 7)
+            eTank = EnemyTank(left * 100, top, speed)
+            MainGame.EnemyTank_list.append(eTank)
+
+    def blitEnemyTank(self):
+        for eTank in MainGame.EnemyTank_list:
+            eTank.displayTank()
+            # 坦克移动的方法
+            eTank.randMove()
 
     def endGame(self):
         print("谢谢使用")
@@ -198,7 +196,7 @@ class MainGame():
             # 根据坦克的开关状态调用坦克的移动方法
             if MainGame.TANK_P1 and not MainGame.TANK_P1.stop:
                 MainGame.TANK_P1.move()
-            time.sleep(0.02)
+            time.sleep(0.2)
             # 窗口的刷新
             _display.update()
 
