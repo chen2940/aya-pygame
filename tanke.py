@@ -7,88 +7,6 @@ COLOR_WRITE = pygame.Color(255, 0, 0)
 version = "0.01 Bate"
 
 
-class Tank():
-    def __init__(self, left, top):
-        self.speed = 6
-        self.images = {
-            'U': pygame.image.load('img/p1tankU.gif'),
-            'D': pygame.image.load('img/p1tankD.gif'),
-            'L': pygame.image.load('img/p1tankL.gif'),
-            'R': pygame.image.load('img/p1tankR.gif')
-        }
-        self.direction = 'U'
-        self.image = self.images[self.direction]
-        # 坦克所在的区域 Rect->
-        self.rect = self.image.get_rect()
-        self.rect.left = left
-        # 指定坦克初始化位置 分别距 x，y 轴的位置
-        self.rect.top = top
-        self.stop = True
-
-        # 展示坦克(将坦克这个 surface 绘制到窗口中 blit())
-
-    def displayTank(self):
-        # 1.重新设置坦克的图片
-        self.image = self.images[self.direction]
-        # 2.将坦克加入到窗口中
-        MainGame.window.blit(self.image, self.rect)
-
-    # 坦克的移动方法
-    def move(self):
-        if self.direction == 'L':
-            if self.rect.left > 0:
-                self.rect.left -= self.speed
-        elif self.direction == 'R':
-            if self.rect.left + self.rect.height < MainGame.SCREEN_WIDTH:
-                self.rect.left += self.speed
-        elif self.direction == 'U':
-            if self.rect.top > 0:
-                self.rect.top -= self.speed
-        elif self.direction == 'D':
-            if self.rect.top + self.rect.height < MainGame.SCREEN_HEIGHT:
-                self.rect.top += self.speed
-
-
-class EnemyTank(Tank):
-    def __init__(self, left, top, speed):
-        self.images = {
-            'U': pygame.image.load('img/enemy1U.gif'),
-            'D': pygame.image.load('img/enemy1D.gif'),
-            'L': pygame.image.load('img/enemy1L.gif'),
-            'R': pygame.image.load('img/enemy1R.gif')
-        }
-        self.direction = self.randDirection()
-        self.image = self.images[self.direction]
-        # 坦克所在的区域 Rect->
-        self.rect = self.image.get_rect()
-        # 指定坦克初始化位置 分别距 x，y 轴的位置
-        self.rect.left = left
-        self.rect.top = top
-        # 新增速度属性
-        self.speed = speed
-        self.stop = True
-
-    def randDirection(self):
-        num = random.randint(1, 4)
-        if num == 1:
-            return 'U'
-        elif num == 2:
-            return 'D'
-        elif num == 3:
-            return 'L'
-        elif num == 4:
-            return 'R'
-
-    # 随机移动
-    def randMove(self):
-        if self.step <= 0:
-            self.direction = self.randDirection()
-            self.step = 50
-        else:
-            self.move()
-            self.step -= 1
-
-    # 将敌方坦克加入到窗口中
 
 
 class MainGame():
@@ -125,6 +43,21 @@ class MainGame():
         # 设置一下游戏标
         _display.set_caption("坦克大战 " + version)
         # 让窗口持续刷新操作
+        while True:
+            # 给窗口完成一个填充颜色
+            MainGame.window.fill(COLOR_BLACK)
+            MainGame.window.blit(self.getTextSurface("剩余敌人:%d" % 5), (5, 5))
+            MainGame.TANK_P1.displayTank()
+            # 循环展示敌方坦克
+            self.blitEnemyTank()
+            # 在循环中持续完成事件的获取
+            self.getEvent()
+            # 根据坦克的开关状态调用坦克的移动方法
+            if MainGame.TANK_P1 and not MainGame.TANK_P1.stop:
+                MainGame.TANK_P1.move()
+            time.sleep(0.02)
+            # 窗口的刷新
+            _display.update()
 
     def creatEnemyTank(self):
         top = 100
@@ -186,19 +119,159 @@ class MainGame():
                         # 修改坦克的移动状态
                         MainGame.TANK_P1.stop = True
 
-        while True:
-            # 给窗口完成一个填充颜色
-            MainGame.window.fill(COLOR_BLACK)
-            MainGame.window.blit(self.getTextSurface("剩余敌人:%d" % 5), (5, 5))
-            MainGame.TANK_P1.displayTank()
-            # 在循环中持续完成事件的获取
-            self.getEvent()
-            # 根据坦克的开关状态调用坦克的移动方法
-            if MainGame.TANK_P1 and not MainGame.TANK_P1.stop:
-                MainGame.TANK_P1.move()
-            time.sleep(0.2)
-            # 窗口的刷新
-            _display.update()
+class Tank():
+    def __init__(self, left, top):
+        self.speed = 6
+        self.images = {
+            'U': pygame.image.load('img/p1tankU.gif'),
+            'D': pygame.image.load('img/p1tankD.gif'),
+            'L': pygame.image.load('img/p1tankL.gif'),
+            'R': pygame.image.load('img/p1tankR.gif')
+        }
+        self.direction = 'U'
+        self.image = self.images[self.direction]
+        # 坦克所在的区域 Rect->
+        self.rect = self.image.get_rect()
+        self.rect.left = left
+        # 指定坦克初始化位置 分别距 x，y 轴的位置
+        self.rect.top = top
+        self.stop = True
 
+        # 展示坦克(将坦克这个 surface 绘制到窗口中 blit())
+
+    def displayTank(self):
+        # 1.重新设置坦克的图片
+        self.image = self.images[self.direction]
+        # 2.将坦克加入到窗口中
+        MainGame.window.blit(self.image, self.rect)
+
+    # 坦克的移动方法
+    def move(self):
+        if self.direction == 'L':
+            if self.rect.left > 0:
+                self.rect.left -= self.speed
+        elif self.direction == 'R':
+            if self.rect.left + self.rect.height < MainGame.SCREEN_WIDTH:
+                self.rect.left += self.speed
+        elif self.direction == 'U':
+            if self.rect.top > 0:
+                self.rect.top -= self.speed
+        elif self.direction == 'D':
+            if self.rect.top + self.rect.height < MainGame.SCREEN_HEIGHT:
+                self.rect.top += self.speed
+
+
+class EnemyTank(Tank):
+    def __init__(self, left, top, speed):
+        self.step = 1
+        self.images = {
+            'U': pygame.image.load('img/enemy1U.gif'),
+            'D': pygame.image.load('img/enemy1D.gif'),
+            'L': pygame.image.load('img/enemy1L.gif'),
+            'R': pygame.image.load('img/enemy1R.gif')
+        }
+        self.direction = self.randDirection()
+        self.image = self.images[self.direction]
+        # 坦克所在的区域 Rect->
+        self.rect = self.image.get_rect()
+        # 指定坦克初始化位置 分别距 x，y 轴的位置
+        self.rect.left = left
+        self.rect.top = top
+        # 新增速度属性
+        self.speed = speed
+        self.stop = True
+
+    def randDirection(self):
+        num = random.randint(1, 4)
+        if num == 1:
+            return 'U'
+        elif num == 2:
+            return 'D'
+        elif num == 3:
+            return 'L'
+        elif num == 4:
+            return 'R'
+
+    # 随机移动
+    def randMove(self):
+        if self.step <= 0:
+            self.direction = self.randDirection()
+            self.step = 50
+        else:
+            self.move()
+            self.step -= 1
+#     def hitMyTank(self):
+#
+#
+# class Buller():
+#     def __init__(self,tank):
+#
+#     # 子弹的移动方法
+#     def bulletMove(self):
+#
+#     # 展示子弹的方法
+#     def displayBullet(self):
+#
+#     # 将我方子弹加入到窗口中
+#     def blitBullet(self):
+#
+#     # 将敌方坦克加入到窗口中
+#     def blitEnemyTank(self):
+#
+#
+#     # 将敌方子弹加入到窗口中
+#     def blitEnemyBullet(self):
+#
+# class BaseItem(pygame.sprite.Sprite):
+#     def __init__(self):
+#
+#     # 新增我方子弹碰撞敌方坦克的方法
+#     def hitEnemyTank(self):
+#
+#     def blitBullet(self):
+#
+# class Explode():
+#     def __init__(self,tank):
+#
+#     # 展示爆炸效果
+#     def displayExplode(self):
+#
+#     # 新增我方子弹碰撞敌方坦克的方法
+#     def hitEnemyTank(self):
+#
+#     # 新增方法： 展示爆炸效果列表
+#     def displayExplodes(self):
+#
+#     # 新增敌方子弹与我方坦克的碰撞方法
+#     def hitMyTank(self):
+#
+#     # 将敌方子弹加入到窗口中
+#     def blitEnemyBullet(self):
+#
+# class Wall():
+#     def __init__(self,left,top):
+#
+#     def displayWall(self):
+#
+#     # 创建墙壁的方法
+#     def creatWalls(self):
+#
+#     def blitWalls(self):
+#
+#
+#     # 新增子弹与墙壁的碰撞
+#     def hitWalls(self):
+#
+#     def stay(self):
+#
+#     def hitWalls(self):
+#
+#
+# class MyTank(Tank):
+#     def init(self, left, top):
+#         super(MyTank, self).init(left, top)
+#
+#     # 新增主动碰撞到敌方坦克的方法
+#     def hitEnemyTank(self):
 
 MainGame().startGame()
