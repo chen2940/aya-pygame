@@ -4,7 +4,7 @@ _display = pygame.display
 _font = pygame.font
 COLOR_BLACK = pygame.Color(0, 0, 0)
 COLOR_WRITE = pygame.Color(255, 255, 255)
-version = "1.03"
+version = "0.01 Bate"
 
 
 class MainGame():
@@ -28,7 +28,7 @@ class MainGame():
         # 创建窗口加载窗口
         MainGame.window = _display.set_mode([MainGame.SCREEN_WIDTH, MainGame.SCREEN_HEIGHT])
         # 设置一下游戏标题
-        _display.set_caption("坦克大战 V"+version)
+        _display.set_caption("坦克大战 "+version)
         # 让窗口持续刷新操作
         while True:
             # 给窗口完成一个填充颜色
