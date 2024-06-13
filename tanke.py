@@ -12,8 +12,8 @@ version = "0.01 Bate"
 class MainGame():
     # 游戏主窗口
     window = None
-    SCREEN_HEIGHT = 768
-    SCREEN_WIDTH = 1024
+    SCREEN_HEIGHT = 500
+    SCREEN_WIDTH = 800
 
     # 创建我方坦克
     TANK_P1 = None
@@ -203,16 +203,67 @@ class EnemyTank(Tank):
 #     def hitMyTank(self):
 #
 #
-# class Buller():
-#     def __init__(self,tank):
-#
-#     # 子弹的移动方法
-#     def bulletMove(self):
-#
-#     # 展示子弹的方法
-#     def displayBullet(self):
-#
-#     # 将我方子弹加入到窗口中
+class Buller():
+    def __init__(self,tank):
+        # 图片
+        self.image = pygame.image.load('img/enemymissile.gif')
+        # 方向（坦克方向）
+        self.direction = tank.direction
+        # 位置
+        self.rect = self.image.get_rect()
+        if self.direction == 'U':
+            self.rect.top = tank.rect.top - self.rect.height
+            self.rect.left = tank.rect.left + tank.rect.width / 2 - self.rect.width / 2
+        elif self.direction == 'D':
+            self.rect.left = tank.rect.left + tank.rect.width / 2 - self.rect.width / 2
+            self.rect.top = tank.rect.top + tank.rect.height
+        elif self.direction == 'L':
+            self.rect.left = tank.rect.left - self.rect.width / 2 - self.rect.width / 2
+            self.rect.top = tank.rect.top + tank.rect.width / 2 - self.rect.width / 2
+        elif self.direction == 'R':
+            self.rect.left = tank.rect.left + tank.rect.width
+            self.rect.top = tank.rect.top + tank.rect.width / 2 - self.rect.width / 2
+        # 速度
+        self.speed = 7
+        # 用来记录子弹是否活着
+        self.live = True
+    # 子弹的移动方法
+    def bulletMove(self):
+        if self.direction == 'U':
+            if self.rect.top > 0:
+                self.rect.top -= self.speed
+            else:
+                # 修改状态值
+                self.live = False
+        elif self.direction == 'D':
+            if self.rect.top < MainGame.SCREEN_HEIGHT - self.rect.height:
+                self.rect.top += self.speed
+            else:
+                # 修改状态值
+                self.live = False
+        elif self.direction == 'L':
+            if self.rect.left > 0:
+                self.rect.left -= self.speed
+            else:
+                # 修改状态值
+                self.live = False
+        elif self.direction == 'R':
+            if self.rect.left < MainGame.SCREEN_WIDTH - self.rect.width:
+                self.rect.left += self.speed
+            else:
+                # 修改状态值
+                self.live = False
+
+    # 展示子弹的方法
+    def displayBullet(self):
+        MainGame.window.blit(self.image, self.rect)
+        elif event.key == pygame.K_SPACE:
+        print("发射子弹")
+        # 产生一颗子弹
+        m = Bullet(MainGame.TANK_P1)
+        # 将子弹加入到子弹列表
+        MainGame.Bullet_list.append(m)
+    #     # 将我方子弹加入到窗口中
 #     def blitBullet(self):
 #
 #     # 将敌方坦克加入到窗口中
