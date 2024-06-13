@@ -123,7 +123,7 @@ class EnemyTank(Tank):
         elif num == 3:
             return 'L'
         elif num == 4:
-            return 'R
+            return 'R'
 
 
 class MainGame():
