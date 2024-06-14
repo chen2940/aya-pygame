@@ -1,6 +1,7 @@
 # 导入模块
 import pygame, time, random
 from pygame.sprite import Sprite
+
 SCREEN_WIDTH = 800  # 宽度
 SCREEN_HEIGHT = 500  # 高度
 BG_COLOR = pygame.Color(0, 0, 0)  # 颜色
@@ -10,6 +11,7 @@ TEXT_COLOR = pygame.Color(255, 0, 0)  # 字体颜色
 class Baseitem(Sprite):
     def __init__(self, color, width, height):
         pygame.sprite.Sprite.__init__(self)
+
 
 # 坦克类
 class MainGame():
@@ -168,9 +170,11 @@ class MainGame():
                         MainGame.my_tank.direction = 'D'
                         MainGame.my_tank.stop = False
                         print('下键, 坦克向下移动')
+                    elif event.key == pygame.K_ESCAPE:
+                        self.endGame()
                     elif event.key == pygame.K_SPACE:
                         print('发射子弹')
-                        if len(MainGame.myBulletList) < 3:  # 可以同时发射子弹数量的上限
+                        if len(MainGame.myBulletList) < 1:  # 可以同时发射子弹数量的上限
                             myBullet = Bullet(MainGame.my_tank)
                             MainGame.myBulletList.append(myBullet)
                             music = Music('img/fire.wav')
@@ -297,8 +301,8 @@ class EnemyTank(Tank):
             self.step -= 1
 
     def shot(self):  # 重写shot方法
-        num = random.randint(1, 100)
-        if num < 10:
+        num = random.randint(1, 1000)
+        if num < 20:
             return Bullet(self)
 
 
@@ -320,7 +324,7 @@ class Bullet(Baseitem):
         elif self.direction == 'R':
             self.rect.left = tank.rect.left + tank.rect.width
             self.rect.top = tank.rect.top + tank.rect.width / 2 - self.rect.width / 2
-        self.speed = 5   # 子弹的速度
+        self.speed = 10  # 子弹的速度
         self.live = True  # 子弹的状态
 
     # 移动
