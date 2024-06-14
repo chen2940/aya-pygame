@@ -4,7 +4,7 @@ _display = pygame.display
 _font = pygame.font
 COLOR_BLACK = pygame.Color(0, 0, 0)
 COLOR_WRITE = pygame.Color(255, 0, 0)
-version = "0.01 Bate"
+version = "0.5 Bate"
 
 
 class MainGame():
