@@ -41,7 +41,7 @@ class MainGame():
         _display.init()
         # 创建窗口加载窗口
         MainGame.window = _display.set_mode([MainGame.SCREEN_WIDTH, MainGame.SCREEN_HEIGHT])
-        MainGame.TANK_P1 = Tank(400, 300)
+        self.creatMyTank()
         self.creatEnemyTank()
         self.creatWalls()
         # 设置一下游戏标
@@ -114,6 +114,8 @@ class MainGame():
                     m = Bullet(MainGame.TANK_P1)
                     # 将子弹加入到子弹列表
                     MainGame.Bullet_list.append(m)
+                    music = Music('img/fire.wav')
+                    music.play()
                 elif event.key == pygame.K_ESCAPE:
                     # 退出游戏
                     self.endGame()
@@ -123,6 +125,15 @@ class MainGame():
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                     # 修改坦克的移动状态
                     MainGame.TANK_P1.stop = True
+
+    # 创建我方坦克的方法
+    def creatMyTank(self):
+        # 创建我方坦克
+        MainGame.TANK_P1 = MyTank(400, 300)
+        # 创建音乐对象
+        music = Music('img/start.wav')
+        # 调用播放音乐方法
+        music.play()
 
     def creatEnemyTank(self):
         top = 100
@@ -225,8 +236,8 @@ class Tank(BaseItem):
         # 指定坦克初始化位置 分别距 x，y 轴的位置
         self.rect.top = top
         self.rect.left = left
-        self.stop = None
-        self.live = None
+        self.stop = True
+        self.live = True
 
         # 展示坦克(将坦克这个 surface 绘制到窗口中 blit())
 
@@ -267,7 +278,6 @@ class Tank(BaseItem):
                 # 产生一个爆炸效果
                 explode = Explode(eTank)
 
-                
                 # 将爆炸效果加入到爆炸效果列表
                 MainGame.Explode_list.append(explode)
                 self.live = False
@@ -458,13 +468,25 @@ class Wall():
 
 class MyTank(Tank):
     def init(self, left, top):
-        super(MyTank, self).init(left, top)
+        super(MyTank, self).__init__(left, top)
 
     # 新增主动碰撞到敌方坦克的方法
     def hitEnemyTank(self):
         for eTank in MainGame.EnemyTank_list:
             if pygame.sprite.collide_rect(eTank, self):
                 self.stay()
+
+
+class Music():
+    def __init__(self, fileName):
+        self.fileName = fileName
+        # 先初始化混合器
+        pygame.mixer.init()
+        pygame.mixer.music.load(self.fileName)
+
+    # 开始播放音乐
+    def play(self):
+        pygame.mixer.music.play()
 
 
 MainGame().startGame()
