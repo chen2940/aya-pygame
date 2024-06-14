@@ -1,355 +1,316 @@
-import pygame, sys, time, random
+# 导入模块
+import pygame, time, random
+from pygame.sprite import Sprite
+SCREEN_WIDTH = 800  # 宽度
+SCREEN_HEIGHT = 500  # 高度
+BG_COLOR = pygame.Color(0, 0, 0)  # 颜色
+TEXT_COLOR = pygame.Color(255, 0, 0)  # 字体颜色
 
-_display = pygame.display
-_font = pygame.font
-COLOR_BLACK = pygame.Color(0, 0, 0)
-COLOR_WRITE = pygame.Color(255, 0, 0)
-version = "0.5 Bate"
 
+class Baseitem(Sprite):
+    def __init__(self, color, width, height):
+        pygame.sprite.Sprite.__init__(self)
 
+# 坦克类
 class MainGame():
-    # 游戏主窗口
     window = None
-    SCREEN_HEIGHT = 500
-    SCREEN_WIDTH = 800
-
-    # 创建我方坦克
-    TANK_P1 = None
-    # 存储所有敌方坦克
-    EnemyTank_list = []
-    # 要创建的敌方坦克的数量
-    EnemTank_count = 5
-    # 存储我方子弹的列表
-    Bullet_list = []
-    Enemy_bullet_list = []
-    Explode_list = []
-    Wall_list = []
-
-    # pygame.sprite.collide_rect(first, second)  # 返回布尔值
+    my_tank = None
+    enemyTankList = []  # 敌方坦克列表
+    enemyTankCount = 5  # 敌方坦克数量
+    myBulletList = []  # 我方坦克子弹列表
+    enemyBulletList = []  # 敌方坦克子弹列表
+    explodeList = []  # 爆炸效果列表
+    WallList = []  # 墙壁列表
 
     def __init__(self):
         pass
 
-    def getTextSurface(self, text):
-        _font.init()
-        font = _font.SysFont("kaiti", 18)
-        textSurface = font.render(text, True, COLOR_WRITE)
-        return textSurface
-
-    # 开始游戏方法
+    # 开始游戏
     def startGame(self):
-        _display.init()
-        # 创建窗口加载窗口
-        MainGame.window = _display.set_mode([MainGame.SCREEN_WIDTH, MainGame.SCREEN_HEIGHT])
-        self.creatMyTank()
-        self.creatEnemyTank()
-        self.creatWalls()
-        # 设置一下游戏标
-        _display.set_caption("坦克大战 " + version)
-        # 让窗口持续刷新操作
+        pygame.display.init()  # 加载主窗口
+        MainGame.window = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])  # 设置窗口大小并显示
+        self.createMytank()
+        self.createEnemyTank()  # 初始化敌方坦克
+        self.createWall()  # 初始化墙壁
+        # 窗口标题设置
+        pygame.display.set_caption('坦克大战')
         while True:
-            # 给窗口完成一个填充颜色
-            MainGame.window.fill(COLOR_BLACK)
-            MainGame.window.blit(self.getTextSurface("剩余敌人:%d" % 5), (5, 5))
-            MainGame.TANK_P1.displayTank()
-            # 循环展示敌方坦克
-            self.blitEnemyTank()
-            # 在循环中持续完成事件的获取
-            self.getEvent()
-            # 循环展示我方子弹
-            self.blitBullet()
-            self.displayExplodes()
-            # 循环展示敌方子弹
-            self.blitEnemyBullet()
-            self.blitWalls()
-            # 根据坦克的开关状态调用坦克的移动方法
-            if MainGame.TANK_P1 and not MainGame.TANK_P1.stop:
-                MainGame.TANK_P1.move()
-                # 调用碰撞墙壁的方法
-                MainGame.TANK_P1.hitWalls()
-                MainGame.TANK_P1.hitEnemyTank()
             time.sleep(0.02)
-            # 窗口的刷新
-            _display.update()
+            # 颜色填充
+            MainGame.window.fill(BG_COLOR)
+            # 获取事件
+            self.getEvent()
+            # 绘制文字
+            MainGame.window.blit(self.getTextSuface('敌方坦克剩余数量%d' % len(MainGame.enemyTankList)), (10, 10))
+            if MainGame.my_tank and MainGame.my_tank.live:
+                MainGame.my_tank.displayTank()  # 展示我方坦克
+            else:
+                del MainGame.my_tank  # 删除我方坦克
+                MainGame.my_tank = None
+            self.blitEnemyTank()  # 展示敌方坦克
+            self.blitMyBullet()  # 我方坦克子弹
+            self.blitEnemyBullet()  # 展示敌方子弹
+            self.blitExplode()  # 爆炸效果展示
+            self.blitWall()  # 展示墙壁
+            if MainGame.my_tank and MainGame.my_tank.live:
+                if not MainGame.my_tank.stop:
+                    MainGame.my_tank.move()  # 调用坦克移动方法
+                    MainGame.my_tank.hitWall()
+                    MainGame.my_tank.myTank_hit_enemyTank()
+            pygame.display.update()
 
-    def endGame(self):
-        print("谢谢使用")
-        # 结束 python 解释器
-        exit()
-
-    def getEvent(self):
-        # 1.获取所有事件
-        eventList = pygame.event.get()
-        # 2.对事件进行判断处理(1、点击关闭按钮 2、按下键盘上的某个按键)
-        for event in eventList:
-            # 判断 event.type 是否 QUIT，如果是退出的话，直接调用程序结束方法
-            if event.type == pygame.QUIT:
-                self.endGame()
-            # 判断事件类型是否为按键按下，如果是，继续判断按键是哪一个按键，来进行对应的处理
-            if event.type == pygame.KEYDOWN:
-                # 具体是哪一个按键的处理
-                if event.key == pygame.K_LEFT:
-                    print("坦克向左调头，移动")
-                    # 修改坦克方向
-                    MainGame.TANK_P1.direction = 'L'
-                    MainGame.TANK_P1.stop = False
-                elif event.key == pygame.K_RIGHT:
-                    print("坦克向右调头，移动")
-                    # 修改坦克方向
-                    MainGame.TANK_P1.direction = 'R'
-                    MainGame.TANK_P1.stop = False
-                elif event.key == pygame.K_UP:
-                    print("坦克向上调头，移动")
-                    # 修改坦克方向
-                    MainGame.TANK_P1.direction = 'U'
-                    MainGame.TANK_P1.stop = False
-                elif event.key == pygame.K_DOWN:
-                    print("坦克向下掉头，移动")
-                    # 修改坦克方向
-                    MainGame.TANK_P1.direction = 'D'
-                    MainGame.TANK_P1.stop = False
-                elif event.key == pygame.K_SPACE:
-                    print("发射子弹")
-                    # 产生一颗子弹
-                    m = Bullet(MainGame.TANK_P1)
-                    # 将子弹加入到子弹列表
-                    MainGame.Bullet_list.append(m)
-                    music = Music('img/fire.wav')
-                    music.play()
-                elif event.key == pygame.K_ESCAPE:
-                    # 退出游戏
-                    self.endGame()
-            # 结束游戏方法
-            if event.type == pygame.KEYUP:
-                # 松开的如果是方向键，才更改移动开关状态
-                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    # 修改坦克的移动状态
-                    MainGame.TANK_P1.stop = True
-
-    # 创建我方坦克的方法
-    def creatMyTank(self):
-        # 创建我方坦克
-        MainGame.TANK_P1 = MyTank(400, 300)
-        # 创建音乐对象
-        music = Music('img/start.wav')
-        # 调用播放音乐方法
-        music.play()
-
-    def creatEnemyTank(self):
-        top = 100
-        speed = random.randint(3, 6)
-        for i in range(MainGame.EnemTank_count):
-            # 每次都随机生成一个 left 值
-            left = random.randint(1, 7)
-            eTank = EnemyTank(left * 100, top, speed)
-            MainGame.EnemyTank_list.append(eTank)
-
-    # 创建墙壁的方法
-    def creatWalls(self):
-        for i in range(6):
-            wall = Wall(130 * i, 240)
-            MainGame.Wall_list.append(wall)
-
-    #
-    def blitWalls(self):
-        for wall in MainGame.Wall_list:
+    def blitWall(self):
+        for wall in MainGame.WallList:
             if wall.live:
                 wall.displayWall()
             else:
-                MainGame.Wall_list.remove(wall)
+                MainGame.WallList.remove(wall)
 
-    # 将敌方坦克加入到窗口中
+    def createWall(self):  # 初始化墙壁
+        for i in range(6):
+            wall = Wall(i * 145, 220)
+            MainGame.WallList.append(wall)
+
+    def createMytank(self):  # 初始化我方坦克
+        MainGame.my_tank = MyTank(350, 300)
+        music = Music('img/start.wav')  # 创建音乐对象
+        music.play()  # 播放音乐
+
+    def createEnemyTank(self):  # 初始化敌方坦克, 将敌方坦克添加到列表中
+        top = 100
+        for i in range(self.enemyTankCount):  # 生成指定敌方坦克数量
+            left = random.randint(0, 600)
+            speed = random.randint(1, 4)
+            enemy = EnemyTank(left, top, speed)
+            MainGame.enemyTankList.append(enemy)
+
     def blitEnemyTank(self):
-        for eTank in MainGame.EnemyTank_list:
-            if eTank.live:
-                eTank.displayTank()
-                # 坦克移动的方法
-                eTank.randMove()
-                # 调用敌方坦克与墙壁的碰撞方法
-                eTank.hitWalls()
-                # 敌方坦克是否撞到我方坦克
-                eTank.hitMyTank()
-                # 调用敌方坦克的射击
-                eBullet = eTank.shot()
-                # 如果子弹为 None。不加入到列表
-                if eBullet:
-                    # 将子弹存储敌方子弹列表
-                    MainGame.Enemy_bullet_list.append(eBullet)
+        for enemyTank in MainGame.enemyTankList:
+            if enemyTank.live:  # 判断敌方坦克状态
+                enemyTank.displayTank()
+                enemyTank.randMove()  # 调用子弹移动
+                enemyTank.hitWall()
+                if MainGame.my_tank and MainGame.my_tank.live:
+                    enemyTank.enemyTank_hit_myTank()
+                enemyBullet = enemyTank.shot()  # 敌方坦克射击
+                if enemyBullet:  # 判断敌方坦克子弹是否为None
+                    MainGame.enemyBulletList.append(enemyBullet)  # 存储敌方坦克子弹
             else:
-                MainGame.EnemyTank_list.remove(eTank)
+                MainGame.enemyTankList.remove(enemyTank)
 
-    # 将敌方子弹加入到窗口中
-    def blitEnemyBullet(self):
-        for eBullet in MainGame.Enemy_bullet_list:
-            # 如果子弹还活着，绘制出来，否则，直接从列表中移除该子弹
-            if eBullet.live:
-                eBullet.displayBullet()
-                # 让子弹移动
-                eBullet.bulletMove()
-                if MainGame.TANK_P1 and MainGame.TANK_P1.live:
-                    eBullet.hitMyTank()
+    def blitExplode(self):
+        for expolde in MainGame.explodeList:
+            if expolde.live:
+                expolde.displayExplode()
             else:
-                MainGame.Enemy_bullet_list.remove(eBullet)
+                MainGame.explodeList.remove(expolde)
 
-    def blitBullet(self):
-        for bullet in MainGame.Bullet_list:
-            # 如果子弹还活着，绘制出来，否则，直接从列表中移除该子弹
-            if bullet.live:
-                bullet.displayBullet()
-                # 让子弹移动
-                bullet.bulletMove()
-                # 调用我方子弹与敌方坦克的碰撞方法
-                bullet.hitEnemyTank()
+    def blitMyBullet(self):  # 循环我方子弹列表, 并展示
+        for myBullet in MainGame.myBulletList:
+            if myBullet.live:  # 判断子弹的状态
+                myBullet.displayBullet()
+                myBullet.move()
+                myBullet.myBullet_hit_enemyTank()
+                myBullet.hitWall()  # 检测我方坦克子弹是否碰撞
             else:
-                MainGame.Bullet_list.remove(bullet)
+                MainGame.myBulletList.remove(myBullet)
 
-    # 新增方法： 展示爆炸效果列表
-    def displayExplodes(self):
-        for explode in MainGame.Explode_list:
-            if explode.live:
-                explode.displayExplode()
+    def blitEnemyBullet(self):  # 循环敌方子弹列表, 并展示
+        for enemyBullet in MainGame.enemyBulletList:
+            if enemyBullet.live:
+                enemyBullet.displayBullet()
+                enemyBullet.move()
+                enemyBullet.enemyBullet_hit_myTank()
+                enemyBullet.hitWall()  # 检测敌方坦克子弹是否碰撞
             else:
-                MainGame.Explode_list.remove(explode)
+                MainGame.enemyBulletList.remove(enemyBullet)
+
+    # 结束游戏
+    def endGame(self):
+        print('游戏结束')
+        exit()  # 退出游戏
+
+    # 文字显示
+    def getTextSuface(self, text):
+        pygame.font.init()  # 字体初始化
+        font = pygame.font.SysFont('kaiti', 16)
+        # 绘制文字信息
+        textSurface = font.render(text, True, TEXT_COLOR)
+        return textSurface
+
+    # 事件获取
+    def getEvent(self):
+        # 获取所有事件
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                # 退出游戏
+                self.endGame()
+            # 键盘按键
+            if event.type == pygame.KEYDOWN:
+                if not MainGame.my_tank:  # 当我方坦克不存在时, 按下Esc键重生
+                    if event.key == pygame.K_ESCAPE:
+                        self.createMytank()
+                if MainGame.my_tank and MainGame.my_tank.live:
+                    # 上、下、左、右键的判断
+                    if event.key == pygame.K_LEFT:
+                        MainGame.my_tank.direction = 'L'
+                        MainGame.my_tank.stop = False
+                        print('左键, 坦克向左移动')
+                    elif event.key == pygame.K_RIGHT:
+                        MainGame.my_tank.direction = 'R'
+                        MainGame.my_tank.stop = False
+                        print('右键, 坦克向右移动')
+                    elif event.key == pygame.K_UP:
+                        MainGame.my_tank.direction = 'U'
+                        MainGame.my_tank.stop = False
+                        print('上键, 坦克向上移动')
+                    elif event.key == pygame.K_DOWN:
+                        MainGame.my_tank.direction = 'D'
+                        MainGame.my_tank.stop = False
+                        print('下键, 坦克向下移动')
+                    elif event.key == pygame.K_SPACE:
+                        print('发射子弹')
+                        if len(MainGame.myBulletList) < 3:  # 可以同时发射子弹数量的上限
+                            myBullet = Bullet(MainGame.my_tank)
+                            MainGame.myBulletList.append(myBullet)
+                            music = Music('img/fire.wav')
+                            music.play()
+            # 松开键盘, 坦克停止移动
+            if event.type == pygame.KEYUP:
+                # 只有松开上、下、左、右键时坦克才停止, 松开空格键坦克不停止
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN or event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    if MainGame.my_tank and MainGame.my_tank.live:
+                        MainGame.my_tank.stop = True
 
 
-class BaseItem(pygame.sprite.Sprite):
-    def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
-
-
-class Tank(BaseItem):
+# 坦克类
+class Tank(Baseitem):
     def __init__(self, left, top):
-        self.oldTop = True
-        self.oldLeft = True
-        self.speed = 5
+        # 保存加载的图片
         self.images = {
             'U': pygame.image.load('img/p1tankU.gif'),
             'D': pygame.image.load('img/p1tankD.gif'),
             'L': pygame.image.load('img/p1tankL.gif'),
-            'R': pygame.image.load('img/p1tankR.gif')
+            'R': pygame.image.load('img/p1tankR.gif'),
         }
-        self.direction = 'U'
-        self.image = self.images[self.direction]
-        # 坦克所在的区域 Rect->
-        self.rect = self.image.get_rect()
-        self.rect.left = left
-        # 指定坦克初始化位置 分别距 x，y 轴的位置
-        self.rect.top = top
-        self.rect.left = left
-        self.stop = True
+        self.direction = 'L'  # 方向
+        self.image = self.images[self.direction]  # 根据图片方向获取图片
+        self.rect = self.image.get_rect()  # 根据图片获取区域
+        self.rect.left, self.rect.top = left, top
+        self.speed = 5  # 移动速度
+        self.stop = True  # 坦克移动开关
         self.live = True
+        self.OldLeft = self.rect.left
+        self.OldTop = self.rect.top
 
-        # 展示坦克(将坦克这个 surface 绘制到窗口中 blit())
-
-    def displayTank(self):
-        # 1.重新设置坦克的图片
-        self.image = self.images[self.direction]
-        # 2.将坦克加入到窗口中
-        MainGame.window.blit(self.image, self.rect)
-
-    # 坦克的移动方法
+    # 移动
     def move(self):
+        self.OldLeft = self.rect.left
+        self.OldTop = self.rect.top
+        # 判断坦克方向进行移动
         if self.direction == 'L':
             if self.rect.left > 0:
                 self.rect.left -= self.speed
-        elif self.direction == 'R':
-            if self.rect.left + self.rect.height < MainGame.SCREEN_WIDTH:
-                self.rect.left += self.speed
         elif self.direction == 'U':
             if self.rect.top > 0:
                 self.rect.top -= self.speed
         elif self.direction == 'D':
-            if self.rect.top + self.rect.height < MainGame.SCREEN_HEIGHT:
+            if self.rect.top + self.rect.height < SCREEN_HEIGHT:
                 self.rect.top += self.speed
+        elif self.direction == 'R':
+            if self.rect.left + self.rect.height < SCREEN_WIDTH:
+                self.rect.left += self.speed
 
-    # 新增碰撞墙壁的方法
-    def hitWalls(self):
-        for wall in MainGame.Wall_list:
-            if pygame.sprite.collide_rect(wall, self):
-                self.stay()
+    # 射击
+    def shot(self):
+        return Bullet(self)
 
     def stay(self):
-        self.rect.left = True
-        self.rect.top = True
+        self.rect.left = self.OldLeft
+        self.rect.top = self.OldTop
 
-    def hitEnemyTank(self):
-        for eTank in MainGame.EnemyTank_list:
-            if pygame.sprite.collide_rect(eTank, self):
-                # 产生一个爆炸效果
-                explode = Explode(eTank)
+    def hitWall(self):
+        for wall in MainGame.WallList:
+            if pygame.sprite.collide_rect(self, wall):
+                self.stay()
 
-                # 将爆炸效果加入到爆炸效果列表
-                MainGame.Explode_list.append(explode)
-                self.live = False
-                eTank.live = False
+    # 展示坦克的方法
+    def displayTank(self):
+        # 获取展示对象
+        self.image = self.images[self.direction]
+        # 调用blit展示
+        MainGame.window.blit(self.image, self.rect)
 
 
+# 我方坦克
+class MyTank(Tank):
+    def __init__(self, left, top):
+        super(MyTank, self).__init__(left, top)
+
+    def myTank_hit_enemyTank(self):
+        for enemyTank in MainGame.enemyTankList:
+            if pygame.sprite.collide_rect(self, enemyTank):
+                self.stay()
+
+
+# 敌方坦克
 class EnemyTank(Tank):
     def __init__(self, left, top, speed):
-        self.step = 2
+        super(EnemyTank, self).__init__(left, top)
+        # 加载图片集
         self.images = {
             'U': pygame.image.load('img/enemy1U.gif'),
             'D': pygame.image.load('img/enemy1D.gif'),
             'L': pygame.image.load('img/enemy1L.gif'),
-            'R': pygame.image.load('img/enemy1R.gif')
+            'R': pygame.image.load('img/enemy1R.gif'),
         }
+        # 随机生成方向
         self.direction = self.randDirection()
-        self.image = self.images[self.direction]
-        # 坦克所在的区域 Rect->
-        self.rect = self.image.get_rect()
-        # 指定坦克初始化位置 分别距 x，y 轴的位置
-        self.rect.left = left
-        self.rect.top = top
-        # 新增速度属性
-        self.speed = speed
-        self.stop = True
-        self.live = True
+        self.image = self.images[self.direction]  # 根据方向获取图片
+        self.rect = self.image.get_rect()  # 获取区域
+        self.rect.left, self.rect.top = left, top  # 对left和top赋值
+        self.speed = speed  # 速度
+        self.flag = True  # 坦克移动开关
+        self.step = 50  # 敌方坦克步数
+
+    def enemyTank_hit_myTank(self):
+        if pygame.sprite.collide_rect(self, MainGame.my_tank):
+            self.stay()
 
     def randDirection(self):
-        num = random.randint(1, 4)
-        if num == 1:
-            return 'U'
-        elif num == 2:
-            return 'D'
-        elif num == 3:
-            return 'L'
-        elif num == 4:
-            return 'R'
+        nums = random.randint(1, 4)  # 生成1~4的随机整数
+        if nums == 1:
+            return "U"
+        elif nums == 2:
+            return "D"
+        elif nums == 3:
+            return "L"
+        elif nums == 4:
+            return "R"
 
-    # 随机移动
-    def randMove(self):
-        if self.step <= 0:
+    def randMove(self):  # 坦克的随机方向移动
+        if self.step < 0:  # 步数小于0, 随机改变方向
             self.direction = self.randDirection()
-            self.step = 50
+            self.step = 50  # 步数复位
         else:
             self.move()
             self.step -= 1
 
-        # 实现发射子弹方法
-
-    def shot(self):
-        num = random.randint(1, 1000)
-        if num <= 20:
+    def shot(self):  # 重写shot方法
+        num = random.randint(1, 100)
+        if num < 10:
             return Bullet(self)
 
-    def hitMyTank(self):
-        if MainGame.TANK_P1 and MainGame.TANK_P1.live:
-            if pygame.sprite.collide_rect(self, MainGame.TANK_P1):
-                # 让敌方坦克停下来 stay()
-                self.stay()
 
-
-class Bullet(BaseItem):
+# 子弹类
+class Bullet(Baseitem):
     def __init__(self, tank):
-        # 图片
-        self.image = pygame.image.load('img/enemymissile.gif')
-        # 方向（坦克方向）
-        self.direction = tank.direction
-        # 位置
-        self.rect = self.image.get_rect()
-        if self.direction == 'U':
-            self.rect.top = tank.rect.top - self.rect.height
+        self.image = pygame.image.load('img/enemymissile.gif')  # 图片加载
+        self.direction = tank.direction  # 子弹的方向
+        self.rect = self.image.get_rect()  # 获取区域
+        if self.direction == 'U':  # 子弹的left和top与方向有关
             self.rect.left = tank.rect.left + tank.rect.width / 2 - self.rect.width / 2
+            self.rect.top = tank.rect.top - self.rect.height
         elif self.direction == 'D':
             self.rect.left = tank.rect.left + tank.rect.width / 2 - self.rect.width / 2
             self.rect.top = tank.rect.top + tank.rect.height
@@ -359,134 +320,113 @@ class Bullet(BaseItem):
         elif self.direction == 'R':
             self.rect.left = tank.rect.left + tank.rect.width
             self.rect.top = tank.rect.top + tank.rect.width / 2 - self.rect.width / 2
-        # 速度
-        self.speed = 7
-        # 用来记录子弹是否活着
-        self.live = True
+        self.speed = 5   # 子弹的速度
+        self.live = True  # 子弹的状态
 
-    # 子弹的移动方法
-    def bulletMove(self):
+    # 移动
+    def move(self):
         if self.direction == 'U':
             if self.rect.top > 0:
                 self.rect.top -= self.speed
             else:
-                # 修改状态值
-                self.live = False
+                self.live = False  # 修改子弹的状态
+        elif self.direction == 'R':
+            if self.rect.left + self.rect.width < SCREEN_WIDTH:
+                self.rect.left += self.speed
+            else:
+                self.live = False  # 修改子弹的状态
         elif self.direction == 'D':
-            if self.rect.top < MainGame.SCREEN_HEIGHT - self.rect.height:
+            if self.rect.top + self.rect.height < SCREEN_HEIGHT:
                 self.rect.top += self.speed
             else:
-                # 修改状态值
-                self.live = False
+                self.live = False  # 修改子弹的状态
         elif self.direction == 'L':
             if self.rect.left > 0:
                 self.rect.left -= self.speed
             else:
-                # 修改状态值
-                self.live = False
-        elif self.direction == 'R':
-            if self.rect.left < MainGame.SCREEN_WIDTH - self.rect.width:
-                self.rect.left += self.speed
-            else:
-                # 修改状态值
-                self.live = False
+                self.live = False  # 修改子弹的状态
 
-    # 展示子弹的方法
-    def displayBullet(self):
-        MainGame.window.blit(self.image, self.rect)
-
-    # 新增我方子弹碰撞敌方坦克的方法
-    def hitEnemyTank(self):
-        for eTank in MainGame.EnemyTank_list:
-            if pygame.sprite.collide_rect(eTank, self):
-                # 产生一个爆炸效果
-                explode = Explode(eTank)
-                # 将爆炸效果加入到爆炸效果列表
-                MainGame.Explode_list.append(explode)
-                self.live = False
-                eTank.live = False
-
-    def hitMyTank(self):
-        if pygame.sprite.collide_rect(self, MainGame.TANK_P1):
-            # 产生爆炸效果，并加入到爆炸效果列表中
-            explode = Explode(MainGame.TANK_P1)
-            MainGame.Explode_list.append(explode)
-            # 修改子弹状态
-            self.live = False
-            # 修改我方坦克状态
-            MainGame.TANK_P1.live = False
-
-    def hitWalls(self):
-        for wall in MainGame.Wall_list:
-            if pygame.sprite.collide_rect(wall, self):
-                # 修改子弹的 live 属性
-                self.live = False
-                wall.hp -= 1
+    def hitWall(self):
+        for wall in MainGame.WallList:  # 循环遍历墙壁列表
+            if pygame.sprite.collide_rect(self, wall):  # 检测子弹是否碰撞墙壁
+                self.live = False  # 修改子弹状态
+                wall.hp -= 1  # 碰撞后墙壁生命值减少
                 if wall.hp <= 0:
                     wall.live = False
 
+    # 子弹展示
+    def displayBullet(self):
+        # 将图片加载到窗口
+        MainGame.window.blit(self.image, self.rect)
 
-class Explode(BaseItem):
+    def myBullet_hit_enemyTank(self):
+        for enemyTank in MainGame.enemyTankList:
+            if pygame.sprite.collide_rect(enemyTank, self):
+                enemyTank.live = False
+                self.live = False
+                explode = Explode(enemyTank)
+                MainGame.explodeList.append(explode)
+
+    def enemyBullet_hit_myTank(self):
+        if MainGame.my_tank and MainGame.my_tank.live:
+            if pygame.sprite.collide_rect(MainGame.my_tank, self):
+                explode = Explode(MainGame.my_tank)  # 爆炸对象
+                MainGame.explodeList.append(explode)  # 将爆炸对象添加到爆炸列表中
+                self.live = False  # 修改敌方子弹的状态
+                MainGame.my_tank.live = False  # 我方坦克的状态
+
+
+# 墙壁类
+class Wall():
+    def __init__(self, left, top):
+        self.image = pygame.image.load('img/steels.gif')  # 加载墙壁图片
+        self.rect = self.image.get_rect()  # 获取区域
+        self.rect.left, self.rect.top = left, top  # 设置left, top
+        self.live = True  # 存活状态
+        self.hp = 3  # 设置墙壁生命值
+
+    # 展示墙壁
+    def displayWall(self):
+        MainGame.window.blit(self.image, self.rect)
+
+
+# 爆炸类
+class Explode():
     def __init__(self, tank):
         self.rect = tank.rect
-        self.step = 0
         self.images = [
             pygame.image.load('img/blast0.gif'),
             pygame.image.load('img/blast1.gif'),
             pygame.image.load('img/blast2.gif'),
             pygame.image.load('img/blast3.gif'),
-            pygame.image.load('img/blast4.gif')
+            pygame.image.load('img/blast4.gif'),
         ]
+        self.step = 0
         self.image = self.images[self.step]
         self.live = True
 
-    # 展示爆炸效果
+    # 爆炸效果
     def displayExplode(self):
         if self.step < len(self.images):
-            MainGame.window.blit(self.image, self.rect)
             self.image = self.images[self.step]
             self.step += 1
+            MainGame.window.blit(self.image, self.rect)  # 添加到主窗口
         else:
             self.live = False
             self.step = 0
 
 
-class Wall():
-    def __init__(self, left, top):
-        self.image = pygame.image.load('img/steels.gif')
-        self.rect = self.image.get_rect()
-        self.rect.left = left
-        self.rect.top = top
-        # 用来判断墙壁是否应该在窗口中展示
-        self.live = True
-        # 用来记录墙壁的生命值
-        self.hp = 3
-
-    def displayWall(self):
-        MainGame.window.blit(self.image, self.rect)
-
-
-class MyTank(Tank):
-    def init(self, left, top):
-        super(MyTank, self).__init__(left, top)
-
-    # 新增主动碰撞到敌方坦克的方法
-    def hitEnemyTank(self):
-        for eTank in MainGame.EnemyTank_list:
-            if pygame.sprite.collide_rect(eTank, self):
-                self.stay()
-
-
+# 音效类
 class Music():
-    def __init__(self, fileName):
-        self.fileName = fileName
-        # 先初始化混合器
+    def __init__(self, filename):
+        self.filename = filename
         pygame.mixer.init()
-        pygame.mixer.music.load(self.fileName)
+        pygame.mixer.music.load(self.filename)  # 加载音乐
 
-    # 开始播放音乐
+    # 音乐播放
     def play(self):
         pygame.mixer.music.play()
 
 
-MainGame().startGame()
+if __name__ == '__main__':
+    MainGame().startGame()
