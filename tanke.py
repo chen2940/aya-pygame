@@ -1,11 +1,12 @@
 # 导入模块
 import pygame, time, random
 from pygame.sprite import Sprite
-
+version = "V0.5"
 SCREEN_WIDTH = 800  # 宽度
 SCREEN_HEIGHT = 500  # 高度
 BG_COLOR = pygame.Color(0, 0, 0)  # 颜色
 TEXT_COLOR = pygame.Color(255, 0, 0)  # 字体颜色
+
 
 
 class Baseitem(Sprite):
@@ -35,7 +36,7 @@ class MainGame():
         self.createEnemyTank()  # 初始化敌方坦克
         self.createWall()  # 初始化墙壁
         # 窗口标题设置
-        pygame.display.set_caption('坦克大战')
+        pygame.display.set_caption("坦克大战"+version)
         while True:
             time.sleep(0.02)
             # 颜色填充
@@ -94,9 +95,10 @@ class MainGame():
                 enemyTank.hitWall()
                 if MainGame.my_tank and MainGame.my_tank.live:
                     enemyTank.enemyTank_hit_myTank()
-                enemyBullet = enemyTank.shot()  # 敌方坦克射击
-                if enemyBullet:  # 判断敌方坦克子弹是否为None
-                    MainGame.enemyBulletList.append(enemyBullet)  # 存储敌方坦克子弹
+                if len(MainGame.enemyBulletList) < 2:
+                    enemyBullet = enemyTank.shot()  # 敌方坦克射击
+                    if enemyBullet:  # 判断敌方坦克子弹是否为None
+                        MainGame.enemyBulletList.append(enemyBullet)  # 存储敌方坦克子弹
             else:
                 MainGame.enemyTankList.remove(enemyTank)
 
@@ -174,7 +176,7 @@ class MainGame():
                         self.endGame()
                     elif event.key == pygame.K_SPACE:
                         print('发射子弹')
-                        if len(MainGame.myBulletList) < 1:  # 可以同时发射子弹数量的上限
+                        if len(MainGame.myBulletList) < 3:  # 可以同时发射子弹数量的上限
                             myBullet = Bullet(MainGame.my_tank)
                             MainGame.myBulletList.append(myBullet)
                             music = Music('img/fire.wav')
@@ -275,7 +277,7 @@ class EnemyTank(Tank):
         self.rect.left, self.rect.top = left, top  # 对left和top赋值
         self.speed = speed  # 速度
         self.flag = True  # 坦克移动开关
-        self.step = 50  # 敌方坦克步数
+        self.step = 10  # 敌方坦克步数
 
     def enemyTank_hit_myTank(self):
         if pygame.sprite.collide_rect(self, MainGame.my_tank):
@@ -302,7 +304,7 @@ class EnemyTank(Tank):
 
     def shot(self):  # 重写shot方法
         num = random.randint(1, 1000)
-        if num < 20:
+        if num < 20 or num >990:
             return Bullet(self)
 
 
