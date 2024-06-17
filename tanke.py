@@ -1,7 +1,7 @@
 # 导入模块
 import pygame, time, random
 from pygame.sprite import Sprite
-version = "V0.5"
+version = "V0.6"
 SCREEN_WIDTH = 800  # 宽度
 SCREEN_HEIGHT = 500  # 高度
 BG_COLOR = pygame.Color(0, 0, 0)  # 颜色
