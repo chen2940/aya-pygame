@@ -423,7 +423,7 @@ class Explode():
 
 
 # 音效类
-class Music():
+class Music:
     def __init__(self, filename):
         self.filename = filename
         pygame.mixer.init()
